@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: otp-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - otp_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: otp-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: ${SERVER_PORT}
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      FLYWAY_LOCATIONS: ${FLYWAY_LOCATIONS}
+      TOKEN_SECRET: ${TOKEN_SECRET}
+      TOKEN_TTL_SECONDS: ${TOKEN_TTL_SECONDS}
+      OTP_EXPIRATION_SCHEDULER_INTERVAL_SECONDS: ${OTP_EXPIRATION_SCHEDULER_INTERVAL_SECONDS}
+      EMAIL_ENABLED: ${EMAIL_ENABLED}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_FROM: ${EMAIL_FROM}
+      MAIL_SMTP_HOST: ${MAIL_SMTP_HOST}
+      MAIL_SMTP_PORT: ${MAIL_SMTP_PORT}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH}
+      MAIL_SMTP_STARTTLS_ENABLE: ${MAIL_SMTP_STARTTLS_ENABLE}
+      SMS_ENABLED: ${SMS_ENABLED}
+      SMPP_HOST: ${SMPP_HOST}
+      SMPP_PORT: ${SMPP_PORT}
+      SMPP_SYSTEM_ID: ${SMPP_SYSTEM_ID}
+      SMPP_PASSWORD: ${SMPP_PASSWORD}
+      SMPP_SYSTEM_TYPE: ${SMPP_SYSTEM_TYPE}
+      SMPP_SOURCE_ADDR: ${SMPP_SOURCE_ADDR}
+      TELEGRAM_ENABLED: ${TELEGRAM_ENABLED}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+    volumes:
+      - ./otp-codes.txt:/app/otp-codes.txt
+
+volumes:
+  otp_postgres_data:
